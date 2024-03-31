@@ -369,7 +369,9 @@ const reducer = handleActions<Detectors>(
   initialDetectorsState
 );
 
-export const createDetector = (requestBody: Detector): APIAction => ({
+export const createDetector = (requestBody: Detector): APIAction => (
+  console.log(requestBody),
+  {
   type: CREATE_DETECTOR,
   request: (client: HttpSetup) =>
     client.post(`..${AD_NODE_API.DETECTOR}`, {
@@ -395,13 +397,13 @@ export const getDetector = (detectorId: string): APIAction => ({
   detectorId,
 });
 
-export const getDetectorList = (
-  queryParams: GetDetectorsQueryParams
-): APIAction => ({
-  type: GET_DETECTOR_LIST,
-  request: (client: HttpSetup) =>
-    client.get(`..${AD_NODE_API.DETECTOR}`, { query: queryParams }),
-});
+export const getDetectorList = (queryParams: GetDetectorsQueryParams): APIAction => {
+  return {
+    type: GET_DETECTOR_LIST,
+    request: (client: HttpSetup) =>
+      client.get(`..${AD_NODE_API.DETECTOR}`, { query: queryParams }),
+  };
+};
 
 export const searchDetector = (requestBody: any): APIAction => ({
   type: SEARCH_DETECTOR,

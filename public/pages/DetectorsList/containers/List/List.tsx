@@ -55,6 +55,7 @@ import {
   ALL_DETECTOR_STATES,
   ALL_INDICES,
   SINGLE_DETECTOR_NOT_FOUND_MSG,
+  getAllDetectorsQueryParamsWithDataSourceId,
 } from '../../../utils/constants';
 import { BREADCRUMBS } from '../../../../utils/constants';
 import {
@@ -79,8 +80,10 @@ import {
   NO_PERMISSIONS_KEY_WORD,
   prettifyErrorMessage,
 } from '../../../../../server/utils/helpers';
-import { CoreStart } from '../../../../../../../src/core/public';
+import { CoreStart, MountPoint } from '../../../../../../../src/core/public';
 import { CoreServicesContext } from '../../../../components/CoreServices/CoreServices';
+import { DataSourceManagementPluginSetup, DataSourceSelectableConfig } from '../../../../../../../src/plugins/data_source_management/public';
+import { getNotifications, getSavedObjectsClient } from '../../../../services';
 
 export interface ListRouterParams {
   from: string;
@@ -89,13 +92,18 @@ export interface ListRouterParams {
   indices: string;
   sortDirection: SORT_DIRECTION;
   sortField: string;
+  dataSourceId: string;
 }
-interface ListProps extends RouteComponentProps<ListRouterParams> {}
+interface ListProps extends RouteComponentProps<ListRouterParams> {
+  dataSourceManagement: DataSourceManagementPluginSetup;
+  setActionMenu: (menuMount: MountPoint | undefined) => void;
+}
 interface ListState {
   page: number;
   queryParams: GetDetectorsQueryParams;
   selectedDetectorStates: DETECTOR_STATE[];
   selectedIndices: string[];
+  selectedDataSourceId: string;
 }
 interface ConfirmModalState {
   isOpen: boolean;
@@ -196,7 +204,8 @@ export const DetectorList = (props: ListProps) => {
     queryParams: getURLQueryParams(props.location),
     selectedDetectorStates: ALL_DETECTOR_STATES,
     selectedIndices: ALL_INDICES,
-  });
+    selectedDataSourceId: '',
+  }); 
 
   // Set breadcrumbs on page initialization
   useEffect(() => {
@@ -213,6 +222,7 @@ export const DetectorList = (props: ListProps) => {
       ...state.queryParams,
       indices: state.selectedIndices.join(' '),
       from: state.page * state.queryParams.size,
+      dataSourceId: state.selectedDataSourceId,
     };
 
     history.replace({
@@ -227,6 +237,7 @@ export const DetectorList = (props: ListProps) => {
     state.queryParams,
     state.selectedDetectorStates,
     state.selectedIndices,
+    state.selectedDataSourceId,
   ]);
 
   // Handle all filtering / sorting of detectors
@@ -269,9 +280,8 @@ export const DetectorList = (props: ListProps) => {
       }
     }
   }, [confirmModalState.isRequestingToClose, isLoading]);
-
   const getUpdatedDetectors = async () => {
-    dispatch(getDetectorList(GET_ALL_DETECTORS_QUERY_PARAMS));
+    dispatch(getDetectorList(getAllDetectorsQueryParamsWithDataSourceId(state.selectedDataSourceId)));
   };
 
   const handlePageChange = (pageNumber: number) => {
@@ -352,12 +362,14 @@ export const DetectorList = (props: ListProps) => {
     });
   };
 
-  const [selectedDataSource, setSelectedDataSource] = useState<string>();
-
   const handleDataSourceChange = (e) => {
     const dataConnectionId = e[0] ? e[0].id : undefined;
-    setSelectedDataSource(dataConnectionId);
-    console.log(dataConnectionId);
+
+    setState({
+      ...state,
+      page: 0,
+      selectedDataSourceId: dataConnectionId,
+    })
   }
 
   const handleResetFilter = () => {
@@ -631,10 +643,22 @@ export const DetectorList = (props: ListProps) => {
   };
 
   const confirmModal = getConfirmModal();
+  const DataSourceMenu = props.dataSourceManagement.ui.getDataSourceMenu<DataSourceSelectableConfig>();
 
   return (
     <EuiPage>
       <EuiPageBody>
+        <DataSourceMenu
+          setMenuMountPoint={props.setActionMenu}
+          componentType={'DataSourceSelectable'}
+          componentConfig={{
+            savedObjects:getSavedObjectsClient(),
+            notifications:getNotifications(),
+            hideLocalCluster: true,
+            fullWidth: true,
+            onSelectedDataSources: (dataSources) => handleDataSourceChange(dataSources),
+          }}
+        />
         <ContentPanel
           title={
             isLoading

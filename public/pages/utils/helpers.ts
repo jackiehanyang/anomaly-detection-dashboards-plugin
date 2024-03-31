@@ -9,7 +9,7 @@
  * GitHub history for details.
  */
 
-import { CatIndex, IndexAlias } from '../../../server/models/types';
+import { CatIndex, IndexAlias, MDSQueryParams } from '../../../server/models/types';
 import sortBy from 'lodash/sortBy';
 import { DetectorListItem } from '../../models/interfaces';
 import { SORT_DIRECTION } from '../../../server/utils/constants';
@@ -112,3 +112,13 @@ export const formatNumber = (data: any) => {
     return '';
   }
 };
+
+export const getMDSQueryParams = (location: {
+  search: string 
+}): MDSQueryParams => {
+  const params = new URLSearchParams(location.search);
+  const dataSourceId = params.get('dataSourceId');
+  return {
+    dataSourceId: dataSourceId || '',
+  };
+ }
