@@ -21,10 +21,12 @@ import { APP_PATH } from '../../utils/constants';
 import { DetectorDetail } from '../DetectorDetail';
 import { DefineDetector } from '../DefineDetector/containers/DefineDetector';
 import { ConfigureModel } from '../ConfigureModel/containers/ConfigureModel';
-import { DashboardOverview } from '../Dashboard/Container/DashboardOverview';
+import { DashboardOverview, DashboardOverviewRouterParams } from '../Dashboard/Container/DashboardOverview';
 import { CoreServicesConsumer } from '../../components/CoreServices/CoreServices';
-import { CoreStart } from '../../../../../src/core/public';
+import { CoreStart, MountPoint } from '../../../../../src/core/public';
 import { AnomalyDetectionOverview } from '../Overview';
+import { DataSourceManagementPluginSetup } from '../../../../../src/plugins/data_source_management/public';
+import { AnomalyDetectionOverviewRouterParams } from '../Overview/containers/AnomalyDetectionOverview';
 
 enum Navigation {
   AnomalyDetection = 'Anomaly detection',
@@ -32,9 +34,14 @@ enum Navigation {
   Detectors = 'Detectors',
 }
 
-interface MainProps extends RouteComponentProps {}
+interface MainProps extends RouteComponentProps {
+  dataSourceManagement: DataSourceManagementPluginSetup;
+  setHeaderActionMenu: (menuMount: MountPoint | undefined) => void;
+}
 
 export function Main(props: MainProps) {
+  const {dataSourceManagement, setHeaderActionMenu} = props;
+
   const hideSideNavBar = useSelector(
     (state: AppState) => state.adApp.hideSideNavBar
   );
@@ -77,13 +84,21 @@ export function Main(props: MainProps) {
               <Switch>
                 <Route
                   path={APP_PATH.DASHBOARD}
-                  render={(props: RouteComponentProps) => <DashboardOverview />}
+                  render={(props: RouteComponentProps<DashboardOverviewRouterParams>) => 
+                    <DashboardOverview 
+                      dataSourceManagement={dataSourceManagement}
+                      setActionMenu={setHeaderActionMenu}
+                      {...props}
+                    />}
                 />
                 <Route
                   exact
                   path={APP_PATH.LIST_DETECTORS}
                   render={(props: RouteComponentProps<ListRouterParams>) => (
-                    <DetectorList {...props} />
+                    <DetectorList 
+                    dataSourceManagement={dataSourceManagement}
+                    setActionMenu={setHeaderActionMenu}
+                    {...props} />
                   )}
                 />
                 <Route
@@ -109,9 +124,15 @@ export function Main(props: MainProps) {
                 />
                 <Route
                   path={APP_PATH.DETECTOR_DETAIL}
-                  render={(props: RouteComponentProps) => (
-                    <DetectorDetail {...props} />
-                  )}
+                  render={(props: RouteComponentProps) => {
+                    console.log(props);
+                    return (
+                      <DetectorDetail 
+                        dataSourceManagement={dataSourceManagement}
+                        setActionMenu={setHeaderActionMenu}
+                        {...props} />
+                    );
+                  }}
                 />
                 <Route
                   exact
@@ -131,7 +152,10 @@ export function Main(props: MainProps) {
                 <Route path="/">
                   {totalDetectors > 0 ? (
                     // </div>
-                    <DashboardOverview />
+                    <DashboardOverview 
+                      dataSourceManagement={props.dataSourceManagement}
+                      setActionMenu={props.setHeaderActionMenu}
+                    />
                   ) : (
                     <AnomalyDetectionOverview
                       isLoadingDetectors={isLoadingDetectors}

@@ -24,7 +24,7 @@ import {
   EuiLoadingSpinner,
   EuiButton,
 } from '@elastic/eui';
-import { CoreStart } from '../../../../../../src/core/public';
+import { CoreStart, MountPoint } from '../../../../../../src/core/public';
 import { CoreServicesContext } from '../../../components/CoreServices/CoreServices';
 import { get, isEmpty } from 'lodash';
 import { RouteComponentProps, Switch, Route, Redirect } from 'react-router-dom';
@@ -58,12 +58,16 @@ import {
 import { DETECTOR_STATE } from '../../../../server/utils/constants';
 import { CatIndex } from '../../../../server/models/types';
 import { containsIndex } from '../utils/helpers';
+import { DataSourceManagementPluginSetup, DataSourceViewConfig } from '../../../../../../src/plugins/data_source_management/public';
 
 export interface DetectorRouterProps {
   detectorId?: string;
 }
 interface DetectorDetailProps
-  extends RouteComponentProps<DetectorRouterProps> {}
+  extends RouteComponentProps<DetectorRouterProps> {
+    dataSourceManagement: DataSourceManagementPluginSetup;
+    setActionMenu: (menuMount: MountPoint | undefined) => void;
+  }
 
 const tabs = [
   {
@@ -103,6 +107,8 @@ export const DetectorDetail = (props: DetectorDetailProps) => {
   const core = React.useContext(CoreServicesContext) as CoreStart;
   const dispatch = useDispatch();
   const detectorId = get(props, 'match.params.detectorId', '') as string;
+  console.log(get(props, 'location.search', '') as string);
+  
   const { detector, hasError, isLoadingDetector, errorMessage } =
     useFetchDetectorInfo(detectorId);
   const { monitor, fetchMonitorError, isLoadingMonitor } =
@@ -350,6 +356,9 @@ export const DetectorDetail = (props: DetectorDetailProps) => {
       ></EuiCallOut>
     ) : null;
 
+
+  const DataSourceMenu = props.dataSourceManagement.ui.getDataSourceMenu<DataSourceViewConfig>();
+
   return (
     <React.Fragment>
       {!isEmpty(detector) && !hasError ? (
@@ -361,6 +370,14 @@ export const DetectorDetail = (props: DetectorDetailProps) => {
               : { ...lightStyles, flexGrow: 'unset' }),
           }}
         >
+          <DataSourceMenu
+            setMenuMountPoint={props.setActionMenu}
+            componentType={'DataSourceView'}
+            componentConfig={{
+              activeOption: [{label: 'mydatasource', id: '1'}],
+              fullWidth: true
+            }}
+          />
           <EuiFlexGroup
             justifyContent="spaceBetween"
             style={{ padding: '10px' }}

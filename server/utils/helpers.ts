@@ -20,6 +20,7 @@ import {
 } from 'lodash';
 
 import { MIN_IN_MILLI_SECS } from './constants';
+import { ILegacyCustomClusterClient, LegacyCallAPIOptions, OpenSearchDashboardsRequest } from '../../../../src/core/server';
 
 export const SHOW_DECIMAL_NUMBER_THRESHOLD = 0.01;
 
@@ -81,3 +82,20 @@ export const prettifyErrorMessage = (rawErrorMessage: string) => {
     return `User ${match[2]} has no permissions to [${match[1]}].`;
   }
 };
+
+export function getClientBasedOnDataSource(
+  context: any,
+  dataSourceEnabled: boolean,
+  request: OpenSearchDashboardsRequest,
+  dataSourceId: string,
+  client: any
+): (endpoint: string, clientParams?: Record<string, any>, options?: LegacyCallAPIOptions) => any {
+  console.log(dataSourceEnabled);
+  if (dataSourceEnabled && dataSourceId && dataSourceId.trim().length != 0) {
+    // client for remote cluster
+    return context.dataSource.opensearch.legacy.getClient(dataSourceId).callAPI;
+  } else {
+    // fall back to default local cluster
+    return client.asScoped(request).callAsCurrentUser;
+  }
+}

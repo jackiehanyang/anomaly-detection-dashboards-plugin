@@ -17,8 +17,9 @@ import { Main } from './pages/main';
 import { Provider } from 'react-redux';
 import configureStore from './redux/configureStore';
 import { CoreServicesContext } from './components/CoreServices/CoreServices';
+import { DataSourceManagementPluginSetup } from '../../../src/plugins/data_source_management/public';
 
-export function renderApp(coreStart: CoreStart, params: AppMountParameters) {
+export function renderApp(coreStart: CoreStart, params: AppMountParameters, dataSourceManagement: DataSourceManagementPluginSetup) {
   const http = coreStart.http;
   const store = configureStore(http);
 
@@ -35,7 +36,11 @@ export function renderApp(coreStart: CoreStart, params: AppMountParameters) {
         <Route
           render={(props) => (
             <CoreServicesContext.Provider value={coreStart}>
-              <Main {...props} />
+              <Main 
+                dataSourceManagement={dataSourceManagement}
+                setHeaderActionMenu={params.setHeaderActionMenu}
+                {...props}
+              />
             </CoreServicesContext.Provider>
           )}
         />
