@@ -66,17 +66,6 @@ export const ListFilters = (props: ListFiltersProps) => (
         fullWidth={true}
       />
     </EuiFlexItem>
-    <EuiFlexItem>
-      <ClusterSelector 
-        savedObjectsClient={getSavedObjectsClient()}
-        notifications={getNotifications()}
-        onSelectedDataSource={props.onDataSourceChange}
-        disabled={false}  
-        hideLocalCluster={false}     
-        fullWidth={true}   
-      />
-    
-    </EuiFlexItem>
     
     <EuiFlexItem>
       <EuiComboBox
