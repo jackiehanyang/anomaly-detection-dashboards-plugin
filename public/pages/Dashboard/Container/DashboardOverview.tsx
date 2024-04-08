@@ -9,7 +9,7 @@
  * GitHub history for details.
  */
 
-import React, { Fragment, useState, useEffect } from 'react';
+import React, { Fragment, useState, useEffect, useMemo } from 'react';
 import { AnomaliesLiveChart } from '../Components/AnomaliesLiveChart';
 import { AnomaliesDistributionChart } from '../Components/AnomaliesDistribution';
 
@@ -35,11 +35,11 @@ import {
   ALL_INDICES_MESSAGE,
 } from '../utils/constants';
 import { AppState } from '../../../redux/reducers';
-import { CatIndex, IndexAlias } from '../../../../server/models/types';
+import { CatIndex, IndexAlias, MDSQueryParams } from '../../../../server/models/types';
 import { getVisibleOptions } from '../../utils/helpers';
-import { BREADCRUMBS } from '../../../utils/constants';
-import { DETECTOR_STATE } from '../../../../server/utils/constants';
-import { getDetectorStateOptions } from '../../DetectorsList/utils/helpers';
+import { BREADCRUMBS, MAX_DETECTORS } from '../../../utils/constants';
+import { DETECTOR_STATE, SORT_DIRECTION } from '../../../../server/utils/constants';
+import { getDetectorStateOptions, getURLQueryParams } from '../../DetectorsList/utils/helpers';
 import { DashboardHeader } from '../Components/utils/DashboardHeader';
 import { EmptyDashboard } from '../Components/EmptyDashboard/EmptyDashboard';
 import {
@@ -47,9 +47,27 @@ import {
   NO_PERMISSIONS_KEY_WORD,
 } from '../../../../server/utils/helpers';
 import { CoreServicesContext } from '../../../components/CoreServices/CoreServices';
-import { CoreStart } from '../../../../../../src/core/public';
+import { CoreStart, MountPoint } from '../../../../../../src/core/public';
+import { DataSourceManagementPluginSetup, DataSourceSelectableConfig } from '../../../../../../src/plugins/data_source_management/public';
+import { getNotifications, getSavedObjectsClient } from '../../../services';
+import { RouteComponentProps, useHistory } from 'react-router-dom';
+import queryString from 'querystring';
 
-export function DashboardOverview() {
+export interface DashboardOverviewRouterParams {
+  dataSourceId: string;
+}
+
+interface DashboardOverviewProps extends RouteComponentProps<DashboardOverviewRouterParams> {
+  dataSourceEnabled: boolean;
+  dataSourceManagement: DataSourceManagementPluginSetup;
+  setActionMenu: (menuMount: MountPoint | undefined) => void;
+}
+
+interface MDSOverviewState {
+  selectedDataSourceId: string;
+}
+
+export function DashboardOverview(props: DashboardOverviewProps) {
   const core = React.useContext(CoreServicesContext) as CoreStart;
   const dispatch = useDispatch();
   const adState = useSelector((state: AppState) => state.ad);
@@ -57,6 +75,7 @@ export function DashboardOverview() {
   const totalRealtimeDetectors = Object.values(allDetectorList).length;
   const errorGettingDetectors = adState.errorMessage;
   const isLoadingDetectors = adState.requesting;
+  const history = useHistory();
 
   const [currentDetectors, setCurrentDetectors] = useState(
     Object.values(allDetectorList)
@@ -65,6 +84,10 @@ export function DashboardOverview() {
   const [selectedDetectorsName, setSelectedDetectorsName] = useState(
     [] as string[]
   );
+  const queryParams = getURLQueryParams(props.location);
+  const [MDSOverviewState, setMDSOverviewState] = useState<MDSOverviewState>({
+    selectedDataSourceId: queryParams.dataSourceId ? queryParams.dataSourceId : '',
+  });
   const getDetectorOptions = (detectorsIdMap: {
     [key: string]: DetectorListItem;
   }) => {
@@ -112,7 +135,7 @@ export function DashboardOverview() {
 
   const [selectedIndices, setSelectedIndices] = useState([] as string[]);
   const [allIndicesSelected, setAllIndicesSelected] = useState(true);
-
+  
   const visibleIndices = get(opensearchState, 'indices', []) as CatIndex[];
   const visibleAliases = get(opensearchState, 'aliases', []) as IndexAlias[];
 
@@ -156,15 +179,36 @@ export function DashboardOverview() {
     setCurrentDetectors(finalFilteredDetectors);
   };
 
+  const GET_ALL_DETECTORS_QUERY_PARAMS_WITH_DATA_SOURCE = {
+    from: 0,
+    search: '',
+    indices: '',
+    size: MAX_DETECTORS,
+    sortDirection: SORT_DIRECTION.ASC,
+    sortField: 'name',
+    dataSourceId: MDSOverviewState.selectedDataSourceId
+  };
+
   const intializeDetectors = async () => {
-    dispatch(getDetectorList(GET_ALL_DETECTORS_QUERY_PARAMS));
-    dispatch(getIndices(''));
+    dispatch(getDetectorList(GET_ALL_DETECTORS_QUERY_PARAMS_WITH_DATA_SOURCE));
+    dispatch(getIndices('', MDSOverviewState.selectedDataSourceId));
     dispatch(getAliases(''));
   };
 
+  // useEffect(() => {
+  //   intializeDetectors();
+  // }, [[MDSOverviewState.selectedDataSourceId, history]]);
+
   useEffect(() => {
+    // const { history, location } = props;
+    // history.replace({
+    //   ...location,
+    //   search: queryString.stringify({ dataSourceId: MDSOverviewState.selectedDataSourceId }),
+    // })
+  
     intializeDetectors();
-  }, []);
+  }, [MDSOverviewState.selectedDataSourceId]);
+
 
   useEffect(() => {
     if (errorGettingDetectors) {
@@ -197,6 +241,32 @@ export function DashboardOverview() {
     );
   }, [selectedDetectorsName, selectedIndices, selectedDetectorStates]);
 
+  const handleDataSourceChange = (e) => {
+    const dataSourceId = e[0] ? e[0].id : undefined;
+    setMDSOverviewState({
+      queryParams: dataSourceId,
+      selectedDataSourceId: dataSourceId,
+    });
+  };
+
+  const DataSourceMenu =
+    props.dataSourceManagement.ui.getDataSourceMenu<DataSourceSelectableConfig>();
+    const renderDataSourceComponent = useMemo(() => {
+    return (
+      <DataSourceMenu
+        setMenuMountPoint={props.setActionMenu}
+        componentType={'DataSourceSelectable'}
+        componentConfig={{
+          fullWidth: false,
+          savedObjects: getSavedObjectsClient(),
+          notifications: getNotifications(),
+          onSelectedDataSources: (dataSources) =>
+            handleDataSourceChange(dataSources),
+        }}
+      />
+    );
+  }, [getSavedObjectsClient(), getNotifications(), props.setActionMenu]);
+
   return (
     <div style={{ height: '1200px' }}>
       <Fragment>
@@ -209,6 +279,7 @@ export function DashboardOverview() {
           <EmptyDashboard />
         ) : (
           <Fragment>
+            {renderDataSourceComponent}
             <EuiFlexGroup justifyContent="flexStart" gutterSize="s">
               <EuiFlexItem>
                 <EuiComboBox

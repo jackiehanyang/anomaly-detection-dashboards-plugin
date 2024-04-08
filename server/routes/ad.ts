@@ -158,11 +158,15 @@ export default class AdService {
       const requestBody = JSON.stringify(
         convertPreviewInputKeysToSnakeCase(request.body)
       );
-      const response = await this.client
-        .asScoped(request)
-        .callAsCurrentUser('ad.previewDetector', {
-          body: requestBody,
-        });
+      const callWithRequest = getClientBasedOnDataSource(
+        context, 
+        this.dataSourceEnabled, 
+        request, 
+        '4585f560-d1ef-11ee-aa63-2181676cc573',
+        this.client);
+
+      const response: SearchResponse<Monitor> = await callWithRequest(
+        'alerting.searchMonitors', { body: requestBody });
       const transformedKeys = mapKeysDeep(response, toCamel);
       return opensearchDashboardsResponse.ok({
         body: {
@@ -251,9 +255,15 @@ export default class AdService {
       const requestBody = JSON.stringify(
         convertPreviewInputKeysToSnakeCase(request.body)
       );
-      const response = await this.client
-        .asScoped(request)
-        .callAsCurrentUser('ad.validateDetector', {
+
+      const callWithRequest = getClientBasedOnDataSource(
+        context, 
+        this.dataSourceEnabled, 
+        request, 
+        '4585f560-d1ef-11ee-aa63-2181676cc573',
+        this.client);
+
+      const response = await callWithRequest('ad.validateDetector', {
           body: requestBody,
           validationType: validationType,
         });
@@ -486,9 +496,15 @@ export default class AdService {
   ): Promise<IOpenSearchDashboardsResponse<any>> => {
     try {
       const { detectorId } = request.params as { detectorId: string };
-      const response = await this.client
-        .asScoped(request)
-        .callAsCurrentUser('ad.detectorProfile', {
+
+      const callWithRequest = getClientBasedOnDataSource(
+        context, 
+        this.dataSourceEnabled, 
+        request, 
+        '4585f560-d1ef-11ee-aa63-2181676cc573',
+        this.client);
+
+      const response = await callWithRequest('ad.detectorProfile', {
           detectorId,
         });
       return opensearchDashboardsResponse.ok({
@@ -515,9 +531,15 @@ export default class AdService {
   ): Promise<IOpenSearchDashboardsResponse<any>> => {
     try {
       const requestBody = JSON.stringify(request.body);
-      const response: SearchResponse<Detector> = await this.client
-        .asScoped(request)
-        .callAsCurrentUser('ad.searchDetector', { body: requestBody });
+
+      const callWithRequest = getClientBasedOnDataSource(
+        context, 
+        this.dataSourceEnabled, 
+        request, 
+        '4585f560-d1ef-11ee-aa63-2181676cc573',
+        this.client);
+
+      const response: SearchResponse<Detector> = await callWithRequest('ad.searchDetector', { body: requestBody });
       const totalDetectors = get(response, 'hits.total.value', 0);
       const detectors = get(response, 'hits.hits', []).map((detector: any) => ({
         ...convertDetectorKeysToCamelCase(detector._source),
@@ -1147,9 +1169,14 @@ export default class AdService {
   ): Promise<IOpenSearchDashboardsResponse<any>> => {
     try {
       const { detectorName } = request.params as { detectorName: string };
-      const response = await this.client
-        .asScoped(request)
-        .callAsCurrentUser('ad.matchDetector', {
+
+      const callWithRequest = getClientBasedOnDataSource(
+        context, 
+        this.dataSourceEnabled, 
+        request, 
+        '4585f560-d1ef-11ee-aa63-2181676cc573',
+        this.client);
+      const response = await callWithRequest('ad.matchDetector', {
           detectorName,
         });
       return opensearchDashboardsResponse.ok({
@@ -1172,9 +1199,14 @@ export default class AdService {
     opensearchDashboardsResponse: OpenSearchDashboardsResponseFactory
   ): Promise<IOpenSearchDashboardsResponse<any>> => {
     try {
-      const response = await this.client
-        .asScoped(request)
-        .callAsCurrentUser('ad.detectorCount');
+
+      const callWithRequest = getClientBasedOnDataSource(
+        context, 
+        this.dataSourceEnabled, 
+        request, 
+        '4585f560-d1ef-11ee-aa63-2181676cc573',
+        this.client);
+      const response = await callWithRequest('ad.detectorCount');
       return opensearchDashboardsResponse.ok({
         body: {
           ok: true,

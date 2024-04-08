@@ -159,3 +159,8 @@ export type DetectionDateRange = {
   startTime: number;
   endTime: number;
 };
+
+
+export type MDSQueryParams = {
+  dataSourceId?: string;
+};

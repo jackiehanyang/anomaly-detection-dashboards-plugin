@@ -21,7 +21,7 @@ import { APP_PATH } from '../../utils/constants';
 import { DetectorDetail } from '../DetectorDetail';
 import { DefineDetector } from '../DefineDetector/containers/DefineDetector';
 import { ConfigureModel } from '../ConfigureModel/containers/ConfigureModel';
-import { DashboardOverview } from '../Dashboard/Container/DashboardOverview';
+import { DashboardOverview, DashboardOverviewRouterParams } from '../Dashboard/Container/DashboardOverview';
 import { CoreServicesConsumer } from '../../components/CoreServices/CoreServices';
 import { CoreStart, MountPoint } from '../../../../../src/core/public';
 import { AnomalyDetectionOverview } from '../Overview';
@@ -85,7 +85,13 @@ export function Main(props: MainProps) {
               <Switch>
                 <Route
                   path={APP_PATH.DASHBOARD}
-                  render={(props: RouteComponentProps) => <DashboardOverview />}
+                  render={(props: RouteComponentProps<DashboardOverviewRouterParams>) => (
+                    <DashboardOverview 
+                      dataSourceEnabled={dataSourceEnabled}
+                      dataSourceManagement={dataSourceManagement}
+                      setActionMenu={setHeaderActionMenu}
+                      {...props}
+                    />)}
                 />
                 <Route
                   exact
@@ -139,22 +145,37 @@ export function Main(props: MainProps) {
                 />
                 <Route
                   path={APP_PATH.OVERVIEW}
-                  render={() => (
+                  render={(props: RouteComponentProps) => (
                     <AnomalyDetectionOverview
                       isLoadingDetectors={isLoadingDetectors}
+                      dataSourceEnabled={dataSourceEnabled}
+                      dataSourceManagement={dataSourceManagement}
+                      setActionMenu={setHeaderActionMenu}
+                      {...props}
                     />
                   )}
                 />
-                <Route path="/">
-                  {totalDetectors > 0 ? (
-                    // </div>
-                    <DashboardOverview />
-                  ) : (
-                    <AnomalyDetectionOverview
-                      isLoadingDetectors={isLoadingDetectors}
-                    />
-                  )}
-                </Route>
+                <Route 
+                  path="/"
+                  render={(props: RouteComponentProps<DashboardOverviewRouterParams>) => 
+                    totalDetectors > 0 ? (
+                      <DashboardOverview 
+                        dataSourceEnabled={dataSourceEnabled}
+                        dataSourceManagement={dataSourceManagement}
+                        setActionMenu={setHeaderActionMenu}
+                        {...props}
+                      />
+                    ) : (
+                      <AnomalyDetectionOverview
+                        isLoadingDetectors={isLoadingDetectors}
+                        dataSourceEnabled={dataSourceEnabled}
+                        dataSourceManagement={dataSourceManagement}
+                        setActionMenu={setHeaderActionMenu}
+                        {...props}
+                      />
+                    )
+                  }
+                /> 
               </Switch>
             </EuiPageBody>
           </EuiPage>
