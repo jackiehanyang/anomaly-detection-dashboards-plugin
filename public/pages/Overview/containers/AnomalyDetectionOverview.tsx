@@ -104,7 +104,7 @@ export function AnomalyDetectionOverview(props: AnomalyDetectionOverviewProps) {
     queryParams,
     selectedDataSourceId: queryParams.dataSourceId
       ? queryParams.dataSourceId
-      : '',
+      : undefined,
   });
 
   // Set breadcrumbs on page initialization

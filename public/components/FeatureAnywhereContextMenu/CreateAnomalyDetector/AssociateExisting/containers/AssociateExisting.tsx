@@ -24,7 +24,6 @@ import { CoreStart } from '../../../../../../../../src/core/public';
 import { AppState } from '../../../../../redux/reducers';
 import { DetectorListItem } from '../../../../../models/interfaces';
 import {
-  GET_ALL_DETECTORS_QUERY_PARAMS,
   SINGLE_DETECTOR_NOT_FOUND_MSG,
 } from '../../../../../pages/utils/constants';
 import {
@@ -47,11 +46,13 @@ import {
   PLUGIN_NAME,
 } from '../../../../../../public/utils/constants';
 import { renderTime } from '../../../../../../public/pages/DetectorsList/utils/tableUtils';
+import { getAllDetectorsQueryParamsWithDataSourceId } from '../../../../../pages/utils/helpers';
 
 interface AssociateExistingProps {
   embeddableVisId: string;
   selectedDetector: DetectorListItem | undefined;
   setSelectedDetector(detector: DetectorListItem | undefined): void;
+  dataSourceId: string | undefined;
 }
 
 export function AssociateExisting(
@@ -147,7 +148,7 @@ export function AssociateExisting(
   }, []);
 
   const getDetectors = async () => {
-    dispatch(getDetectorList(GET_ALL_DETECTORS_QUERY_PARAMS));
+    dispatch(getDetectorList(getAllDetectorsQueryParamsWithDataSourceId(associateExistingProps.dataSourceId)));
   };
 
   const selectedOptions = useMemo(() => {

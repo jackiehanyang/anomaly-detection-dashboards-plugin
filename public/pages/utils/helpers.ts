@@ -119,7 +119,7 @@ export const formatNumber = (data: any) => {
 };
 
 export const getAllDetectorsQueryParamsWithDataSourceId = (
-  dataSourceId: string
+  dataSourceId=''
 ) => ({
   from: 0,
   search: '',
@@ -131,7 +131,7 @@ export const getAllDetectorsQueryParamsWithDataSourceId = (
 });
 
 export const getSampleDetectorsQueryParamsWithDataSouceId = (
-  dataSourceId: string
+  dataSourceId=''
 ) => ({
   from: 0,
   search: 'sample',

@@ -62,8 +62,10 @@ export const getAnomalies = async (
   return parsePureAnomalies(anomalySummaryResponse);
 };
 
-export const getDetectorResponse = async (detectorId: string) => {
-  const resp = await getClient().get(`..${AD_NODE_API.DETECTOR}/${detectorId}`);
+export const getDetectorResponse = async (detectorId: string, dataSourceId: string = '') => {
+  console.log(dataSourceId);
+  const url = dataSourceId ? `..${AD_NODE_API.DETECTOR}/${detectorId}/${dataSourceId}` : `..${AD_NODE_API.DETECTOR}/${detectorId}`;
+  const resp = await getClient().get(url);
   return resp;
 };
 

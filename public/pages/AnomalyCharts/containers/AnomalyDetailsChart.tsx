@@ -82,7 +82,6 @@ import {
 import { HeatmapCell } from './AnomalyHeatmapChart';
 import { ANOMALY_AGG, MIN_END_TIME, MAX_END_TIME } from '../../utils/constants';
 import {
-  DATA_SOURCE_ID,
   MAX_HISTORICAL_AGG_RESULTS,
 } from '../../../utils/constants';
 import { searchResults } from '../../../redux/reducers/anomalyResults';

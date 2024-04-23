@@ -56,7 +56,7 @@ const reducer = handleActions<SampleDataState>(
 
 export const createSampleData = (
   sampleDataType: SAMPLE_TYPE,
-  dataSourceId: string
+  dataSourceId=''
 ): APIAction => {
   const url = dataSourceId
     ? `..${AD_NODE_API.CREATE_SAMPLE_DATA}/${sampleDataType}/${dataSourceId}`

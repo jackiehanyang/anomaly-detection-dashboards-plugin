@@ -127,6 +127,7 @@ export default class OpenSearchService {
   ): Promise<IOpenSearchDashboardsResponse<any>> => {
     const { index } = request.query as { index: string };
     const { dataSourceId = '' } = request.params as { dataSourceId?: string };
+    console.log('dataSourceId', dataSourceId);
     try {
       const callWithRequest = getClientBasedOnDataSource(
         context,

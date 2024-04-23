@@ -93,7 +93,7 @@ export function DashboardOverview(props: OverviewProps) {
     queryParams,
     selectedDataSourceId: queryParams.dataSourceId
       ? queryParams.dataSourceId
-      : '',
+      : undefined,
   });
 
   const getDetectorOptions = (detectorsIdMap: {
