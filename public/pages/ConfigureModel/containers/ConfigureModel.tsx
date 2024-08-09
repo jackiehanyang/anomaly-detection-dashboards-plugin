@@ -271,7 +271,6 @@ export function ConfigureModel(props: ConfigureModelProps) {
           fullWidth: false,
           savedObjects: getSavedObjectsClient(),
           notifications: getNotifications(),
-          dataSourceFilter: isDataSourceCompatible,
         }}
       />
     );

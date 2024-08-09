@@ -311,7 +311,6 @@ export function ReviewAndCreate(props: ReviewAndCreateProps) {
           fullWidth: false,
           savedObjects: getSavedObjectsClient(),
           notifications: getNotifications(),
-          dataSourceFilter: isDataSourceCompatible,
         }}
       />
     );

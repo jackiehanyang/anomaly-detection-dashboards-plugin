@@ -141,7 +141,6 @@ export function DetectorJobs(props: DetectorJobsProps) {
           fullWidth: false,
           savedObjects: getSavedObjectsClient(),
           notifications: getNotifications(),
-          dataSourceFilter: isDataSourceCompatible,
         }}
       />
     );

@@ -430,7 +430,6 @@ export const DetectorDetail = (props: DetectorDetailProps) => {
           fullWidth: false,
           savedObjects: getSavedObjectsClient(),
           notifications: getNotifications(),
-          dataSourceFilter: isDataSourceCompatible,
         }}
       />
     );
