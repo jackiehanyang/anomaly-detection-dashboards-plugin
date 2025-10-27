@@ -26,6 +26,16 @@ import {
   EuiLoadingSpinner,
   EuiSpacer,
   EuiPanel,
+  EuiTable,
+  EuiTableHeader,
+  EuiTableHeaderCell,
+  EuiTableBody,
+  EuiTableRow,
+  EuiTableRowCell,
+  EuiText,
+  EuiBadge,
+  EuiTitle,
+  EuiButtonGroup,
 } from '@elastic/eui';
 import moment from 'moment';
 import { useDispatch } from 'react-redux';
@@ -65,7 +75,7 @@ import {
   TOP_CHILD_ENTITIES_TO_FETCH,
 } from '../utils/constants';
 import { MIN_IN_MILLI_SECS } from '../../../../server/utils/constants';
-import { DATA_SOURCE_ID, MAX_ANOMALIES } from '../../../utils/constants';
+import { MAX_ANOMALIES } from '../../../utils/constants';
 import {
   searchResults,
   getDetectorResults,
@@ -170,6 +180,11 @@ export const AnomalyHistory = (props: AnomalyHistoryProps) => {
   // and the value is an array of selected entities.
   const [selectedChildEntities, setSelectedChildEntities] =
     useState<EntityOptionsMap>({});
+
+  // State for top anomalies table
+  const [topAnomalies, setTopAnomalies] = useState<any[]>([]);
+  const [isLoadingTopAnomalies, setIsLoadingTopAnomalies] = useState<boolean>(false);
+  const [topAnomaliesOrderBy, setTopAnomaliesOrderBy] = useState<'severity' | 'occurrence'>('severity');
 
   const detectorCategoryField = get(props.detector, 'categoryField', []);
   const isHCDetector = !isEmpty(detectorCategoryField);
@@ -490,8 +505,9 @@ export const AnomalyHistory = (props: AnomalyHistoryProps) => {
   useEffect(() => {
     if (isHCDetector && isValidToFetch()) {
       fetchHCAnomalySummaries();
+      fetchTopAnomalies();
     }
-  }, [dateRange, heatmapDisplayOption]);
+  }, [dateRange, heatmapDisplayOption, topAnomaliesOrderBy]);
 
   useEffect(() => {
     if (selectedHeatmapCell && isValidToFetch()) {
@@ -704,6 +720,58 @@ export const AnomalyHistory = (props: AnomalyHistoryProps) => {
   const fetchBucketizedEntityAnomalyData = async (entityLists: Entity[][]) => {
     getBucketizedAnomalyResults(entityLists);
   };
+
+  // Function to fetch top anomalies for HC detectors
+  const fetchTopAnomalies = async () => {
+    if (!isHCDetector || !isValidToFetch()) {
+      return;
+    }
+
+    setIsLoadingTopAnomalies(true);
+    try {
+      const requestBody = {
+        size: 3,
+        category_field: detectorCategoryField,
+        order: topAnomaliesOrderBy,
+        start_time_ms: dateRange.startDate,
+        end_time_ms: dateRange.endDate,
+      };
+
+      const response = await dispatch(
+        getTopAnomalyResults(
+          detectorId,
+          dataSourceId,
+          props.isHistorical || false,
+          requestBody
+        )
+      );
+
+      if (response && response.response && response.response.buckets) {
+        // Sort based on the selected ordering method
+        let sortedBuckets = response.response.buckets;
+        if (topAnomaliesOrderBy === 'occurrence') {
+          // When ordering by occurrence, the API already returns sorted by doc_count
+          // No additional sorting needed
+        } else {
+          // When ordering by severity, sort by anomaly count for better display
+          sortedBuckets = response.response.buckets.sort((a: any, b: any) => 
+            b.doc_count - a.doc_count
+          );
+        }
+        setTopAnomalies(sortedBuckets);
+      } else {
+        setTopAnomalies([]);
+      }
+    } catch (error) {
+      console.error('Error fetching top anomalies:', error);
+      core.notifications.toasts.addDanger(
+        prettifyErrorMessage(`Error fetching top anomalies: ${error}`)
+      );
+      setTopAnomalies([]);
+    } finally {
+      setIsLoadingTopAnomalies(false);
+    }
+  };
   const [atomicAnomalyResults, setAtomicAnomalyResults] =
     useState<Anomalies[]>();
   const [rawAnomalyResults, setRawAnomalyResults] = useState<Anomalies[]>([]);
@@ -849,6 +917,153 @@ export const AnomalyHistory = (props: AnomalyHistoryProps) => {
     setSelectedTabId(tabId);
   };
 
+  // Function to get anomaly grade color for badges
+  const getAnomalyGradeColor = (grade: number) => {
+    if (grade >= 0.8) return 'danger';
+    if (grade >= 0.6) return 'warning';
+    if (grade >= 0.4) return 'primary';
+    return 'default';
+  };
+
+  // Function to render the top anomalies table
+  const renderTopAnomaliesTable = () => {
+    const orderByOptions = [
+      {
+        id: 'severity',
+        label: 'Severity',
+      },
+      {
+        id: 'occurrence',
+        label: 'Occurrence',
+      },
+    ];
+
+    if (isLoadingTopAnomalies) {
+      return (
+        <EuiPanel>
+          <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
+            <EuiFlexItem>
+              <EuiTitle size="s">
+                <h4>Top 3 Entities with Top Anomalies</h4>
+              </EuiTitle>
+            </EuiFlexItem>
+            <EuiFlexItem grow={false}>
+              <EuiButtonGroup
+                legend="Order by"
+                options={orderByOptions}
+                idSelected={topAnomaliesOrderBy}
+                onChange={(id) => setTopAnomaliesOrderBy(id as 'severity' | 'occurrence')}
+                buttonSize="s"
+                isDisabled={true}
+              />
+            </EuiFlexItem>
+          </EuiFlexGroup>
+          <EuiSpacer size="m" />
+          <div style={{ textAlign: 'center', padding: '20px' }}>
+            <EuiLoadingSpinner size="m" />
+            <EuiSpacer size="s" />
+            <EuiText size="s" color="subdued">
+              Loading top anomalies...
+            </EuiText>
+          </div>
+        </EuiPanel>
+      );
+    }
+
+    if (topAnomalies.length === 0) {
+      return (
+        <EuiPanel>
+          <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
+            <EuiFlexItem>
+              <EuiTitle size="s">
+                <h4>Top 3 Entities with Top Anomalies</h4>
+              </EuiTitle>
+            </EuiFlexItem>
+            <EuiFlexItem grow={false}>
+              <EuiButtonGroup
+                legend="Order by"
+                options={orderByOptions}
+                idSelected={topAnomaliesOrderBy}
+                onChange={(id) => setTopAnomaliesOrderBy(id as 'severity' | 'occurrence')}
+                buttonSize="s"
+              />
+            </EuiFlexItem>
+          </EuiFlexGroup>
+          <EuiSpacer size="m" />
+          <EuiText size="s" color="subdued">
+            No anomaly data available for the selected time range.
+          </EuiText>
+        </EuiPanel>
+      );
+    }
+
+    const orderDescription = topAnomaliesOrderBy === 'severity' 
+      ? 'Ordered by severity (then by anomaly count) for the selected time range'
+      : 'Ordered by anomaly occurrence count for the selected time range';
+
+    return (
+      <EuiPanel>
+        <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
+          <EuiFlexItem>
+            <EuiTitle size="s">
+              <h4>Top 3 Entities with Top Anomalies</h4>
+            </EuiTitle>
+          </EuiFlexItem>
+          <EuiFlexItem grow={false}>
+            <EuiButtonGroup
+              legend="Order by"
+              options={orderByOptions}
+              idSelected={topAnomaliesOrderBy}
+              onChange={(id) => setTopAnomaliesOrderBy(id as 'severity' | 'occurrence')}
+              buttonSize="s"
+            />
+          </EuiFlexItem>
+        </EuiFlexGroup>
+        <EuiSpacer size="m" />
+        <EuiText size="s" color="subdued">
+          {orderDescription}
+        </EuiText>
+        <EuiSpacer size="m" />
+        
+        <EuiTable>
+          <EuiTableHeader>
+            <EuiTableHeaderCell>Entity Combination</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Anomaly Count</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Max Anomaly Grade</EuiTableHeaderCell>
+          </EuiTableHeader>
+          <EuiTableBody>
+            {topAnomalies.map((anomaly, index) => {
+              // Extract all entity key-value pairs and format them
+              const entityPairs = Object.entries(anomaly.key).map(([field, value]) => 
+                `${field}: ${value}`
+              ).join(', ');
+              
+              return (
+                <EuiTableRow key={index}>
+                  <EuiTableRowCell>
+                    <EuiText size="s">
+                      <strong>{entityPairs}</strong>
+                    </EuiText>
+                  </EuiTableRowCell>
+                  <EuiTableRowCell>
+                    <EuiText size="s">
+                      {anomaly.doc_count}
+                    </EuiText>
+                  </EuiTableRowCell>
+                  <EuiTableRowCell>
+                    <EuiBadge color={getAnomalyGradeColor(anomaly.max_anomaly_grade)}>
+                      {anomaly.max_anomaly_grade.toFixed(3)}
+                    </EuiBadge>
+                  </EuiTableRowCell>
+                </EuiTableRow>
+              );
+            })}
+          </EuiTableBody>
+        </EuiTable>
+      </EuiPanel>
+    );
+  };
+
   const renderTabs = () => {
     return tabs.map((tab, index) => (
       <EuiTab
@@ -903,6 +1118,10 @@ export const AnomalyHistory = (props: AnomalyHistoryProps) => {
         handleCategoryFieldsChange={handleCategoryFieldsChange}
       >
         <div style={{ padding: '20px' }}>
+          {isHCDetector ? [
+            renderTopAnomaliesTable(),
+            <EuiSpacer size="m" key="spacer-top-anomalies" />
+          ] : null}
           {isHCDetector
             ? [
                 <AnomalyOccurrenceChart
@@ -992,6 +1211,8 @@ export const AnomalyHistory = (props: AnomalyHistoryProps) => {
                     selectedHeatmapCell={selectedHeatmapCell}
                     detectorIndices={props.detector.indices}
                     detectorTimeField={props.detector.timeField}
+                    anomalyAndFeatureResults={anomalyAndFeatureResults}
+                    detector={props.detector}
                   />
                 )}
               </EuiPanel>

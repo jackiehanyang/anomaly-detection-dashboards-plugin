@@ -18,6 +18,15 @@ import { AnomalyDetectionOpenSearchDashboardsPlugin } from './plugin';
 
 export const configSchema = schema.object({
   enabled: schema.boolean({ defaultValue: true }),
+  llm: schema.object({
+    enabled: schema.boolean({ defaultValue: false }),
+    openai: schema.object({
+      apiKey: schema.maybe(schema.string()),
+      model: schema.string({ defaultValue: 'gpt-4' }),
+      maxTokens: schema.number({ defaultValue: 800 }),
+      temperature: schema.number({ defaultValue: 0.3 }),
+    }),
+  }),
 });
 
 export type AnomalyDetectionOpenSearchDashboardsPluginConfigType = TypeOf<

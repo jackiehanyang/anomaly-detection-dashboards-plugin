@@ -12,6 +12,7 @@
 import React, { Fragment, useState, useEffect, useMemo } from 'react';
 import { AnomaliesLiveChart } from '../Components/AnomaliesLiveChart';
 import { AnomaliesDistributionChart } from '../Components/AnomaliesDistribution';
+import { TopAnomaliesChart } from '../../Overview/components/TopAnomaliesChart/TopAnomaliesChart';
 import queryString from 'querystring';
 
 import { useDispatch, useSelector } from 'react-redux';
@@ -218,7 +219,7 @@ export function DashboardOverview(props: OverviewProps) {
       });
     }
     
-+    dispatch(
+    dispatch(
       getDetectorList(
         getAllDetectorsQueryParamsWithDataSourceId(
           MDSOverviewState.selectedDataSourceId
@@ -373,6 +374,11 @@ export function DashboardOverview(props: OverviewProps) {
                 <AnomalousDetectorsList selectedDetectors={currentDetectors} />
               </EuiFlexItem>
             </EuiFlexGroup>
+            <EuiSpacer />
+            <TopAnomaliesChart 
+              dataSourceId={MDSOverviewState.selectedDataSourceId}
+              detectors={currentDetectors}
+            />
           </Fragment>
         )}
       </Fragment>

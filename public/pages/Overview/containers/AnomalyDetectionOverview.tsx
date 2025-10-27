@@ -71,6 +71,7 @@ import queryString from 'querystring';
 import { getDataSourceFromURL, getSampleDetectorsQueryParamsWithDataSouceId, isDataSourceCompatible } from '../../../../public/pages/utils/helpers';
 import { MDSStates } from '../../../models/interfaces';
 import { TopNavControlButtonData, TopNavControlLinkData } from '../../../../../../src/plugins/navigation/public';
+import { TopAnomaliesChart } from '../components/TopAnomaliesChart/TopAnomaliesChart';
 
 interface AnomalyDetectionOverviewProps extends RouteComponentProps {
   setActionMenu: (menuMount: MountPoint | undefined) => void;
@@ -539,6 +540,19 @@ export function AnomalyDetectionOverview(props: AnomalyDetectionOverviewProps) {
           onClose={() => setShowHostHealthDetailsFlyout(false)}
         />
       ) : null}
+      
+      <EuiSpacer size="xl" />
+      <ContentPanel title="Top Anomalies by High Cardinality Detectors">
+        <EuiText size="s" color="subdued">
+          Monitor the top 3 entities with highest anomaly grades from your High Cardinality detectors. 
+          This helps identify the most critical anomalies across different entities in your system.
+        </EuiText>
+        <EuiSpacer size="m" />
+        <TopAnomaliesChart 
+          dataSourceId={MDSOverviewState.selectedDataSourceId}
+          detectors={allSampleDetectors}
+        />
+      </ContentPanel>
     </Fragment>
   );
 }

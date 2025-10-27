@@ -684,6 +684,7 @@ export default class AdService {
         dataSourceId,
         this.client
       );
+      console.log('requestBody', requestBody);
 
       const response = !resultIndex
         ? await callWithRequest('ad.searchResults', {
@@ -1112,6 +1113,8 @@ export default class AdService {
         dataSourceId,
         this.client
       );
+
+      console.log('requestBody1', requestBody);
 
       const response = !resultIndex
         ? await callWithRequest('ad.searchResults', {

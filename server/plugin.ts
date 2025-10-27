@@ -15,6 +15,7 @@ import { default as createRouter, Router } from './router';
 import {
   AnomalyDetectionOpenSearchDashboardsPluginSetup,
   AnomalyDetectionOpenSearchDashboardsPluginStart,
+  AnomalyDetectionOpenSearchDashboardsPluginConfigType,
 } from '.';
 import {
   Plugin,
@@ -39,6 +40,7 @@ import { DEFAULT_HEADERS } from './utils/constants';
 import { DataSourcePluginSetup } from '../../../src/plugins/data_source/server/types';
 import { DataSourceManagementPlugin } from '../../../src/plugins/data_source_management/public';
 import ForecastService, { registerForecastRoutes } from './routes/forecast';
+import { registerLLMRoutes } from './routes/llm';
 
 export interface ADPluginSetupDependencies {
   dataSourceManagement?: ReturnType<DataSourceManagementPlugin['setup']>;
@@ -54,15 +56,20 @@ export class AnomalyDetectionOpenSearchDashboardsPlugin
 {
   private readonly logger: Logger;
   private readonly globalConfig$: any;
+  private readonly config$: any;
 
   constructor(private readonly initializerContext: PluginInitializerContext) {
     this.logger = initializerContext.logger.get();
     this.globalConfig$ = initializerContext.config.legacy.globalConfig$;
+    this.config$ = initializerContext.config.create();
   }
   public async setup(
     core: CoreSetup,
     { dataSource }: ADPluginSetupDependencies
   ) {
+    // Get plugin configuration
+    const config = await this.config$.pipe(first()).toPromise();
+    
     // Get any custom/overridden headers
     const globalConfig = await this.globalConfig$.pipe(first()).toPromise();
     const { customHeaders, ...rest } = globalConfig.opensearch;
@@ -110,6 +117,7 @@ export class AnomalyDetectionOpenSearchDashboardsPlugin
     registerOpenSearchRoutes(apiRouter, opensearchService);
     registerSampleDataRoutes(apiRouter, sampleDataService);
     registerForecastRoutes(forecastApiRouter, forecastService);
+    registerLLMRoutes(apiRouter, config);
     return {};
   }
 
