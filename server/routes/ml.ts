@@ -18,11 +18,16 @@ import {
   IOpenSearchDashboardsResponse,
 } from '../../../../src/core/server';
 import { getClientBasedOnDataSource } from '../utils/helpers';
+import { OasisServiceSetup } from '../../../NeoDashboardsPlugin/server/oasis/service';
+
 
 export function registerMLRoutes(
   apiRouter: Router,
-  mlService: MLService
+  mlService: MLService,
+  oasisServiceSetup: OasisServiceSetup
+
 ) {
+  mlService.setOasisService(oasisServiceSetup);
   apiRouter.post('/agents/{agentId}/execute', mlService.executeAgent);
   apiRouter.post('/agents/{agentId}/execute/{dataSourceId}', mlService.executeAgent);
 }
@@ -30,10 +35,15 @@ export function registerMLRoutes(
 export default class MLService {
   private client: any;
   dataSourceEnabled: boolean;
+  private oasisService?: OasisServiceSetup;
 
   constructor(client: any, dataSourceEnabled: boolean) {
     this.client = client;
     this.dataSourceEnabled = dataSourceEnabled;
+  }
+
+  setOasisService(oasisService: OasisServiceSetup) {
+    this.oasisService = oasisService;
   }
 
   executeAgent = async (
@@ -45,6 +55,31 @@ export default class MLService {
     try {
       const { agentId, dataSourceId = '' } = request.params as { agentId: string, dataSourceId?: string };
       const { indices } = request.body as { indices: string[] };
+
+      const insightsEnabled = (context as any)?.core?.capabilities?.ad?.insightsEnabled;
+
+      // Use Oasis client if insights enabled and oasisService available
+      if (insightsEnabled && this.oasisService?.getOasisConfig().enabled) {
+        const oasisClient = this.oasisService.getScopedClient(request, context);
+        const oasisResp = await oasisClient.request({
+          method: 'POST',
+          path: `/_plugins/_ml/agents/${agentId}/_execute?async=true`,
+          body: {
+            parameters: {
+              input: indices
+            }
+          },
+          datasourceId: dataSourceId,
+        });
+        
+        return opensearchDashboardsResponse.ok({
+          body: {
+            ok: true,
+            response: oasisResp,
+          },
+        });
+      }
+
       const callWithRequest = getClientBasedOnDataSource(
         context,
         this.dataSourceEnabled,

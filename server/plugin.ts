@@ -31,6 +31,7 @@ import forecastFeature from './cluster/ad/forecastFeature';
 import AdService, { registerADRoutes } from './routes/ad';
 import AlertingService, { registerAlertingRoutes } from './routes/alerting';
 import MLService, { registerMLRoutes } from './routes/ml';
+import { OasisService } from '../../NeoDashboardsPlugin/server/oasis';
 import OpenSearchService, {
   registerOpenSearchRoutes,
 } from './routes/opensearch';
@@ -57,10 +58,17 @@ export class AnomalyDetectionOpenSearchDashboardsPlugin
 {
   private readonly logger: Logger;
   private readonly globalConfig$: any;
+  private oasisService: OasisService;
 
   constructor(initializerContext: PluginInitializerContext) {
     this.logger = initializerContext.logger.get();
     this.globalConfig$ = initializerContext.config.legacy.globalConfig$;
+    this.oasisService = new OasisService(this.logger, {
+      endpoint: 'https://qpjmln09smmllix5sih1.beta-us-east-1.aoss.amazonaws.com/',
+      region: 'us-east-1',
+      timeout: 60000,
+      enabled: true,
+    });
   }
   public async setup(
     core: CoreSetup,
@@ -115,11 +123,12 @@ export class AnomalyDetectionOpenSearchDashboardsPlugin
     const opensearchService = new OpenSearchService(client, dataSourceEnabled);
     const sampleDataService = new SampleDataService(client, dataSourceEnabled);
     const forecastService = new ForecastService(client, dataSourceEnabled);
+    const oasisServiceSetup = this.oasisService.setup();
 
     // Register server routes with the service
     registerADRoutes(apiRouter, adService);
     registerAlertingRoutes(apiRouter, alertingService);
-    registerMLRoutes(mlApiRouter, mlService);
+    registerMLRoutes(mlApiRouter, mlService, oasisServiceSetup);
     registerOpenSearchRoutes(apiRouter, opensearchService);
     registerSampleDataRoutes(apiRouter, sampleDataService);
     registerForecastRoutes(forecastApiRouter, forecastService);
