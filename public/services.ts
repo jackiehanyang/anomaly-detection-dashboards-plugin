@@ -71,6 +71,9 @@ export const [getNavigationUI, setNavigationUI] =
 export const [getApplication, setApplication] =
   createGetterSetter<CoreStart['application']>('application');
 
+export const [getInsightsEnabled, setInsightsEnabled] =
+  createGetterSetter<boolean>('InsightsEnabled');
+
 // This is primarily used for mocking this module and each of its fns in tests.
 // Testing frameworks (like Jest, which is commonly used in OpenSearch Dashboards plugins)
 // make it easy to mock entire modules. By importing the default export (import services

@@ -49,6 +49,7 @@ import {
   setApplication,
   setUsageCollection,
   setAssistantClient,
+  setInsightsEnabled,
 } from './services';
 import { AnomalyDetectionOpenSearchDashboardsPluginStart } from 'public';
 import {
@@ -61,6 +62,8 @@ import { DataSourceManagementPluginSetup } from '../../../src/plugins/data_sourc
 import { DataSourcePluginSetup } from '../../../src/plugins/data_source/public';
 import { NavigationPublicPluginStart } from '../../../src/plugins/navigation/public';
 import { AssistantPublicPluginStart } from '../../dashboards-assistant/public';
+import { AppNavLinkStatus, AppUpdater } from '../../../src/core/public';
+import { BehaviorSubject } from 'rxjs';
 
 declare module '../../../src/plugins/ui_actions/public' {
   export interface ActionContextMapping {
@@ -92,6 +95,9 @@ export interface AnomalyDetectionStartDeps {
 export class AnomalyDetectionOpenSearchDashboardsPlugin
   implements Plugin<AnomalyDetectionSetupDeps, AnomalyDetectionStartDeps>
 {
+  private dailyInsightsFeatureUpdater$ = new BehaviorSubject<AppUpdater>(() => ({}));
+  private dailyInsightsOverviewUpdater$ = new BehaviorSubject<AppUpdater>(() => ({}));
+  private dailyInsightsIndicesUpdater$ = new BehaviorSubject<AppUpdater>(() => ({}));
   public setup(core: CoreSetup, plugins: any) {
     const hideInAppSideNavBar = core.chrome.navGroup.getNavGroupEnabled();
     const forecastingEnabled = true;
@@ -144,6 +150,7 @@ export class AnomalyDetectionOpenSearchDashboardsPlugin
           order: 2000,
         },
         order: 5020,
+        updater$: this.dailyInsightsFeatureUpdater$,
         mount: async (params: AppMountParameters) => {
           // Redirect to overview by default
           window.location.hash = `#/${APP_PATH.DAILY_INSIGHTS_OVERVIEW}`;
@@ -282,6 +289,7 @@ export class AnomalyDetectionOpenSearchDashboardsPlugin
           title: 'Overview',
           order: 8050,
           category: DEFAULT_APP_CATEGORIES.detectionInsights,
+          updater$: this.dailyInsightsOverviewUpdater$,
           mount: async (params: AppMountParameters) => {
             const { renderApp } = await import('./daily_insights_app');
             const [coreStart] = await core.getStartServices();
@@ -295,6 +303,7 @@ export class AnomalyDetectionOpenSearchDashboardsPlugin
           title: 'Insight Management',
           order: 8051,
           category: DEFAULT_APP_CATEGORIES.detectionInsights,
+          updater$: this.dailyInsightsIndicesUpdater$,
           mount: async (params: AppMountParameters) => {
             const { renderApp } = await import('./daily_insights_app');
             const [coreStart] = await core.getStartServices();
@@ -460,6 +469,21 @@ export class AnomalyDetectionOpenSearchDashboardsPlugin
       setAssistantClient(assistantDashboards.assistantClient);
     }
     setApplication(core.application);
+
+    // Hide Daily Insights apps if feature flag disabled via capabilities
+    const insightsEnabled = !!core.application.capabilities?.ad?.['insightsEnabled'];
+    setInsightsEnabled(insightsEnabled);
+    if (!insightsEnabled) {
+      this.dailyInsightsFeatureUpdater$.next(() => ({
+        navLinkStatus: AppNavLinkStatus.hidden,
+      }));
+      this.dailyInsightsOverviewUpdater$.next(() => ({
+        navLinkStatus: AppNavLinkStatus.hidden,
+      }));
+      this.dailyInsightsIndicesUpdater$.next(() => ({
+        navLinkStatus: AppNavLinkStatus.hidden,
+      }));
+    }
     return {};
   }
 }

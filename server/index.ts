@@ -18,6 +18,7 @@ import { AnomalyDetectionOpenSearchDashboardsPlugin } from './plugin';
 
 export const configSchema = schema.object({
   enabled: schema.boolean({ defaultValue: true }),
+  InsightsEnabled: schema.boolean({ defaultValue: false }),
 });
 
 export type AnomalyDetectionOpenSearchDashboardsPluginConfigType = TypeOf<
@@ -28,6 +29,7 @@ export const config: PluginConfigDescriptor<AnomalyDetectionOpenSearchDashboards
   {
     exposeToBrowser: {
       enabled: true,
+      InsightsEnabled: true,
     },
     schema: configSchema,
   };
