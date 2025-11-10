@@ -23,11 +23,8 @@ import { OasisServiceSetup } from '../../../NeoDashboardsPlugin/server/oasis/ser
 
 export function registerMLRoutes(
   apiRouter: Router,
-  mlService: MLService,
-  oasisServiceSetup: OasisServiceSetup
-
+  mlService: MLService
 ) {
-  mlService.setOasisService(oasisServiceSetup);
   apiRouter.post('/agents/{agentId}/execute', mlService.executeAgent);
   apiRouter.post('/agents/{agentId}/execute/{dataSourceId}', mlService.executeAgent);
 }
@@ -56,26 +53,35 @@ export default class MLService {
       const { agentId, dataSourceId = '' } = request.params as { agentId: string, dataSourceId?: string };
       const { indices } = request.body as { indices: string[] };
 
-      const insightsEnabled = (context as any)?.core?.capabilities?.ad?.insightsEnabled;
+      // Get capabilities from request
+      const capabilities = await context.core.capabilities.resolveCapabilities(request);
+      const insightsEnabled = capabilities?.ad?.insightsEnabled === true;
 
       // Use Oasis client if insights enabled and oasisService available
       if (insightsEnabled && this.oasisService?.getOasisConfig().enabled) {
         const oasisClient = this.oasisService.getScopedClient(request, context);
-        const oasisResp = await oasisClient.request({
-          method: 'POST',
-          path: `/_plugins/_ml/agents/${agentId}/_execute?async=true`,
-          body: {
-            parameters: {
-              input: indices
-            }
+        const oasisResp = await oasisClient.request(
+          {
+            method: 'POST',
+            path: `/_plugins/_ml/agents/${agentId}/_execute?async=true`,
+            body: JSON.stringify({
+              parameters: {
+                input: indices
+              }
+            }),
+            datasourceId: dataSourceId,
+            stream: false,
           },
-          datasourceId: dataSourceId,
-        });
+          request,
+          context
+        );
         
         return opensearchDashboardsResponse.ok({
           body: {
             ok: true,
-            response: oasisResp,
+            response: typeof oasisResp.body === 'string' 
+              ? JSON.parse(oasisResp.body) 
+              : oasisResp.body,
           },
         });
       }

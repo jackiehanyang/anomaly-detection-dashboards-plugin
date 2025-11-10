@@ -64,8 +64,6 @@ export class AnomalyDetectionOpenSearchDashboardsPlugin
     this.logger = initializerContext.logger.get();
     this.globalConfig$ = initializerContext.config.legacy.globalConfig$;
     this.oasisService = new OasisService(this.logger, {
-      endpoint: 'https://qpjmln09smmllix5sih1.beta-us-east-1.aoss.amazonaws.com/',
-      region: 'us-east-1',
       timeout: 60000,
       enabled: true,
     });
@@ -123,12 +121,15 @@ export class AnomalyDetectionOpenSearchDashboardsPlugin
     const opensearchService = new OpenSearchService(client, dataSourceEnabled);
     const sampleDataService = new SampleDataService(client, dataSourceEnabled);
     const forecastService = new ForecastService(client, dataSourceEnabled);
-    const oasisServiceSetup = this.oasisService.setup();
+    const oasisServiceSetup = await this.oasisService.setup(core);
+
+    // Set oasisService on mlService before registering routes
+    mlService.setOasisService(oasisServiceSetup);
 
     // Register server routes with the service
     registerADRoutes(apiRouter, adService);
     registerAlertingRoutes(apiRouter, alertingService);
-    registerMLRoutes(mlApiRouter, mlService, oasisServiceSetup);
+    registerMLRoutes(mlApiRouter, mlService);
     registerOpenSearchRoutes(apiRouter, opensearchService);
     registerSampleDataRoutes(apiRouter, sampleDataService);
     registerForecastRoutes(forecastApiRouter, forecastService);
