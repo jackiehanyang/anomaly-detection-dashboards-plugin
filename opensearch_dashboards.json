@@ -11,7 +11,7 @@
     "assistantDashboards",
     "usageCollection"
     "metricsRecorder",
-    "neoDashboardsPlugin"
+    "dashboardsPlugin"
   ],
   "requiredPlugins": [
     "opensearchDashboardsUtils",
