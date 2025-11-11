@@ -31,7 +31,6 @@ import forecastFeature from './cluster/ad/forecastFeature';
 import AdService, { registerADRoutes } from './routes/ad';
 import AlertingService, { registerAlertingRoutes } from './routes/alerting';
 import MLService, { registerMLRoutes } from './routes/ml';
-import { OasisService } from '../../NeoDashboardsPlugin/server/oasis';
 import OpenSearchService, {
   registerOpenSearchRoutes,
 } from './routes/opensearch';

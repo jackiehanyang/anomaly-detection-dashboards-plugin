@@ -18,7 +18,6 @@ import {
   IOpenSearchDashboardsResponse,
 } from '../../../../src/core/server';
 import { getClientBasedOnDataSource } from '../utils/helpers';
-import { OasisServiceSetup } from '../../../NeoDashboardsPlugin/server/oasis/service';
 
 
 export function registerMLRoutes(
@@ -32,8 +31,6 @@ export function registerMLRoutes(
 export default class MLService {
   private client: any;
   dataSourceEnabled: boolean;
-  private oasisService?: OasisServiceSetup;
-
   constructor(client: any, dataSourceEnabled: boolean) {
     this.client = client;
     this.dataSourceEnabled = dataSourceEnabled;
@@ -75,9 +72,7 @@ export default class MLService {
         return opensearchDashboardsResponse.ok({
           body: {
             ok: true,
-            response: typeof oasisResp.body === 'string' 
-              ? JSON.parse(oasisResp.body) 
-              : oasisResp.body,
+            response: oasisResp,
           },
         });
       }
