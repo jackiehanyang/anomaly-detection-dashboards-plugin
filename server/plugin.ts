@@ -58,15 +58,10 @@ export class AnomalyDetectionOpenSearchDashboardsPlugin
 {
   private readonly logger: Logger;
   private readonly globalConfig$: any;
-  private oasisService: OasisService;
 
   constructor(initializerContext: PluginInitializerContext) {
     this.logger = initializerContext.logger.get();
     this.globalConfig$ = initializerContext.config.legacy.globalConfig$;
-    this.oasisService = new OasisService(this.logger, {
-      timeout: 60000,
-      enabled: true,
-    });
   }
   public async setup(
     core: CoreSetup,
@@ -121,10 +116,6 @@ export class AnomalyDetectionOpenSearchDashboardsPlugin
     const opensearchService = new OpenSearchService(client, dataSourceEnabled);
     const sampleDataService = new SampleDataService(client, dataSourceEnabled);
     const forecastService = new ForecastService(client, dataSourceEnabled);
-    const oasisServiceSetup = await this.oasisService.setup(core);
-
-    // Set oasisService on mlService before registering routes
-    mlService.setOasisService(oasisServiceSetup);
 
     // Register server routes with the service
     registerADRoutes(apiRouter, adService);

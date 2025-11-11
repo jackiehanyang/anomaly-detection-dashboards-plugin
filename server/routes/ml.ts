@@ -39,10 +39,6 @@ export default class MLService {
     this.dataSourceEnabled = dataSourceEnabled;
   }
 
-  setOasisService(oasisService: OasisServiceSetup) {
-    this.oasisService = oasisService;
-  }
-
   executeAgent = async (
     context: RequestHandlerContext,
     request: OpenSearchDashboardsRequest,
@@ -58,9 +54,9 @@ export default class MLService {
       const insightsEnabled = capabilities?.ad?.insightsEnabled === true;
 
       // Use Oasis client if insights enabled and oasisService available
-      if (insightsEnabled && this.oasisService?.getOasisConfig().enabled) {
-        const oasisClient = this.oasisService.getScopedClient(request, context);
-        const oasisResp = await oasisClient.request(
+      if (insightsEnabled && context.oasis) {
+        const oasis = context.oasis;
+        const oasisResp = await oasis.oasisClient.request(
           {
             method: 'POST',
             path: `/_plugins/_ml/agents/${agentId}/_execute?async=true`,
