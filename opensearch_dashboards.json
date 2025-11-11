@@ -10,6 +10,8 @@
     "dataSourceManagement",
     "assistantDashboards",
     "usageCollection"
+    "metricsRecorder",
+    "neoDashboardsPlugin"
   ],
   "requiredPlugins": [
     "opensearchDashboardsUtils",

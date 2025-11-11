@@ -72,7 +72,7 @@ export default class MLService {
         return opensearchDashboardsResponse.ok({
           body: {
             ok: true,
-            response: oasisResp,
+            response: oasisResp?.body,
           },
         });
       }
