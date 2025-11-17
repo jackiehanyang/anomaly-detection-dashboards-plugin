@@ -139,15 +139,15 @@ export function IndicesManagement(props: IndicesManagementProps) {
     if (dataSourceEnabled) {
       core.chrome.setBreadcrumbs([
         MDS_BREADCRUMBS.ANOMALY_DETECTOR(MDSInsightsState.selectedDataSourceId),
-        { text: 'Daily Insights' },
+        { text: 'Insights Management' },
       ]);
     } else {
       core.chrome.setBreadcrumbs([
         BREADCRUMBS.ANOMALY_DETECTOR,
-        { text: 'Daily Insights' },
+        { text: 'Insights Management' },
       ]);
     }
-    core.chrome.docTitle.change('Daily Insights');
+    core.chrome.docTitle.change('Insights Management');
   }, [MDSInsightsState]);
 
   // Fetch status and results
