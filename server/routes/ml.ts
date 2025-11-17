@@ -44,25 +44,25 @@ export default class MLService {
     try {
       const { agentId, dataSourceId = '' } = request.params as { agentId: string, dataSourceId?: string };
       const { indices } = request.body as { indices: string[] };
-      // Use Oasis client if insights enabled and oasisService available
-      if (context.oasis) {
-        const oasis = context.oasis;
-        const oasisResp = await oasis.oasisClient.request(
-          {
-            method: 'POST',
-            path: `/_plugins/_ml/agents/${agentId}/_execute?async=true`,
-            body: JSON.stringify({
-              parameters: {
-                input: indices
-              }
-            }),
-            datasourceId: dataSourceId,
-            stream: false,
-          },
-          request,
-          context
-        );
 
+      // Use Oasis client if available
+      const oasisResp = await context.oasis?.client.request(
+        {
+          method: 'POST',
+          path: `/_plugins/_ml/agents/${agentId}/_execute?async=true`,
+          body: JSON.stringify({
+            parameters: {
+              input: indices
+            }
+          }),
+          datasourceId: dataSourceId,
+          stream: false,
+        },
+        request,
+        context
+      );
+
+      if (oasisResp) {
         return opensearchDashboardsResponse.ok({
           body: {
             ok: true,
@@ -98,8 +98,8 @@ export default class MLService {
         },
       });
     } catch (err) {
-      console.log('ML - execute agent failed', err);
-      const errorDetails = err?.body?.error?.details || err?.body?.error?.reason;
+      console.error('ML - execute agent failed', err);
+      const errorDetails = err?.body?.error?.details || err?.body?.error?.reason || err?.message || 'Unknown error';
       return opensearchDashboardsResponse.ok({
         body: {
           ok: false,
