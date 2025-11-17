@@ -62,14 +62,22 @@ export default class MLService {
           request,
           context
         );
-
         if (oasisResp) {
-          return opensearchDashboardsResponse.ok({
-            body: {
-              ok: true,
-              response: oasisResp?.body,
-            },
-          });
+          if (oasisResp.status < 400) {
+            return opensearchDashboardsResponse.ok({
+              body: {
+                ok: true,
+                response: oasisResp?.body,
+              },
+            });
+          } else {
+            return opensearchDashboardsResponse.ok({
+              body: {
+                ok: false,
+                error: oasisResp?.body || oasisResp?.statusText,
+              },
+            });
+          }
         }
       } catch (oasisErr) {
         console.error('ML - Oasis client request failed, falling back to regular client', oasisErr);
@@ -103,7 +111,7 @@ export default class MLService {
       });
     } catch (err) {
       console.error('ML - execute agent failed', err);
-      const errorDetails = err?.body?.error?.details || err?.body?.error?.reason || err?.message || 'Unknown error';
+      const errorDetails = err?.body?.error?.details || err?.body?.error?.reason || err?.message || 'Fail to execute create detector agent';
       return opensearchDashboardsResponse.ok({
         body: {
           ok: false,
