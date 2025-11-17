@@ -58,7 +58,7 @@ export class AnomalyDetectionOpenSearchDashboardsPlugin
   private readonly logger: Logger;
   private readonly globalConfig$: any;
 
-  constructor(initializerContext: PluginInitializerContext) {
+  constructor(private readonly initializerContext: PluginInitializerContext) {
     this.logger = initializerContext.logger.get();
     this.globalConfig$ = initializerContext.config.legacy.globalConfig$;
   }
@@ -123,52 +123,6 @@ export class AnomalyDetectionOpenSearchDashboardsPlugin
     registerOpenSearchRoutes(apiRouter, opensearchService);
     registerSampleDataRoutes(apiRouter, sampleDataService);
     registerForecastRoutes(forecastApiRouter, forecastService);
-
-    // Register capabilities for dynamic feature flags
-    core.capabilities.registerProvider(() => {
-      return {
-        ad: {
-          insightsEnabled: false,
-        },
-      };
-    });
-    // Only register dynamic-config switcher if service exists
-    if ((core as any)?.dynamicConfigService?.getStartService) {
-      const logger = this.logger;
-      const getDynamicConfig = async (request: any) => {
-        const dynamicConfigStart = await (core as any).dynamicConfigService.getStartService();
-        const client = dynamicConfigStart.getClient();
-        const store = dynamicConfigStart.createStoreFromRequest(request);
-        return client.getConfig(
-          { pluginConfigPath: 'anomaly_detection_dashboards' },
-          { asyncLocalStorageContext: store! }
-        );
-      };
-      core.capabilities.registerSwitcher(async (request, capabilities) => {
-        try {
-          const config = await getDynamicConfig(request);
-          const enabled = !!config?.['InsightsEnabled'];
-          return {
-            ad: {
-              ...(capabilities as any).ad,
-              insightsEnabled: enabled,
-            },
-          };
-        } catch (err: any) {
-          logger.warn(
-            `[AD][plugin][capabilitiesSwitcher] Failed to resolve dynamic config. Error: ${
-              err?.message ?? err
-            }`
-          );
-          return {
-            ad: {
-              ...(capabilities as any).ad,
-              insightsEnabled: false,
-            },
-          };
-        }
-      });
-    }
     return {};
   }
 
