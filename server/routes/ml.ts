@@ -41,17 +41,11 @@ export default class MLService {
     request: OpenSearchDashboardsRequest,
     opensearchDashboardsResponse: OpenSearchDashboardsResponseFactory
   ): Promise<IOpenSearchDashboardsResponse<any>> => {
-    
     try {
       const { agentId, dataSourceId = '' } = request.params as { agentId: string, dataSourceId?: string };
       const { indices } = request.body as { indices: string[] };
-
-      // Get capabilities from request
-      const capabilities = await context.core.capabilities.resolveCapabilities(request);
-      const insightsEnabled = capabilities?.ad?.insightsEnabled === true;
-
       // Use Oasis client if insights enabled and oasisService available
-      if (insightsEnabled && context.oasis) {
+      if (context.oasis) {
         const oasis = context.oasis;
         const oasisResp = await oasis.oasisClient.request(
           {
@@ -68,7 +62,7 @@ export default class MLService {
           request,
           context
         );
-        
+
         return opensearchDashboardsResponse.ok({
           body: {
             ok: true,
@@ -90,7 +84,7 @@ export default class MLService {
           input: indices
         }
       };
-      
+
       const response = await callWithRequest('ml.executeAgent', {
         agentId: agentId,
         async: true,
@@ -104,8 +98,8 @@ export default class MLService {
         },
       });
     } catch (err) {
-    console.log('ML - execute agent failed', err);
-    const errorDetails = err?.body?.error?.details || err?.body?.error?.reason;
+      console.log('ML - execute agent failed', err);
+      const errorDetails = err?.body?.error?.details || err?.body?.error?.reason;
       return opensearchDashboardsResponse.ok({
         body: {
           ok: false,

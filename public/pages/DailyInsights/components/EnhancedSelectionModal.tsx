@@ -480,7 +480,7 @@ export function EnhancedSelectionModal({
         </div>
         
         {/* Agent ID field - show in selection step when immediateExecute is true */}
-        {immediateExecute && dataSourceEnabled && (
+        {immediateExecute && !dataSourceEnabled && (
           <>
             <EuiSpacer size="m" />
             <EuiFormRow label="ML Agent ID" helpText="The ML Commons agent ID for creating detectors">
@@ -505,7 +505,7 @@ export function EnhancedSelectionModal({
             </EuiText>
             
             <EuiSpacer size="m" />
-            {dataSourceEnabled && (
+            {!dataSourceEnabled && (
               <>
       <EuiFormRow label="ML Agent ID" helpText="The ML Commons agent ID for creating detectors">
               <EuiFieldText
