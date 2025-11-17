@@ -46,29 +46,33 @@ export default class MLService {
       const { indices } = request.body as { indices: string[] };
 
       // Use Oasis client if available
-      const oasisResp = await context.oasis?.client.request(
-        {
-          method: 'POST',
-          path: `/_plugins/_ml/agents/${agentId}/_execute?async=true`,
-          body: JSON.stringify({
-            parameters: {
-              input: indices
-            }
-          }),
-          datasourceId: dataSourceId,
-          stream: false,
-        },
-        request,
-        context
-      );
-
-      if (oasisResp) {
-        return opensearchDashboardsResponse.ok({
-          body: {
-            ok: true,
-            response: oasisResp?.body,
+      try {
+        const oasisResp = await context.oasis?.client.request(
+          {
+            method: 'POST',
+            path: `/_plugins/_ml/agents/${agentId}/_execute?async=true`,
+            body: JSON.stringify({
+              parameters: {
+                input: indices
+              }
+            }),
+            datasourceId: dataSourceId,
+            stream: false,
           },
-        });
+          request,
+          context
+        );
+
+        if (oasisResp) {
+          return opensearchDashboardsResponse.ok({
+            body: {
+              ok: true,
+              response: oasisResp?.body,
+            },
+          });
+        }
+      } catch (oasisErr) {
+        console.error('ML - Oasis client request failed, falling back to regular client', oasisErr);
       }
 
       const callWithRequest = getClientBasedOnDataSource(
