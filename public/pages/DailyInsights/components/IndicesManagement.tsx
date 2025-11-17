@@ -74,9 +74,15 @@ export function IndicesManagement(props: IndicesManagementProps) {
   const [insightsEnabled, setInsightsEnabled] = useState(false);
   const [MDSInsightsState, setMDSInsightsState] = useState<MDSStates>({
     queryParams,
+<<<<<<< HEAD
     selectedDataSourceId: dataSourceEnabled
       ? (dataSourceId || undefined)
       : undefined,
+=======
+    selectedDataSourceId: queryParams.dataSourceId === undefined
+      ? undefined
+      : queryParams.dataSourceId,
+>>>>>>> 9280ecb7 (adding dataseletor for index management)
   });
 
   const history = useHistory();
