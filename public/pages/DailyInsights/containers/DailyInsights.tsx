@@ -289,7 +289,8 @@ export function DailyInsights(props: DailyInsightsProps) {
     }
 
     setIsStarting(true);
-    
+    setIsRefreshing(true);
+
     if (agentId) {
       // Step 1: Execute ML agent - following ReviewAndCreate pattern exactly
       dispatch(
@@ -300,10 +301,18 @@ export function DailyInsights(props: DailyInsightsProps) {
             core?.notifications.toasts.addDanger(
               'Failed to execute ML agent - API endpoint not available'
             );
+            setIsRefreshing(false);
             setIsStarting(false);
             return;
           }
-          const taskId = resp?.response?.task_id || resp?.task_id;
+
+          core?.notifications.toasts.addSuccess({
+            title: 'Auto insights setup started',
+            text: `Creating anomaly detectors for ${selectedIndicesForSetup.length} ${
+              selectedIndicesForSetup.length === 1 ? 'index' : 'indices'
+            }. The insights job will start shortly.`,
+          });
+
           // Step 2: Start insights job after delay
           setTimeout(async () => {
             try {
@@ -328,6 +337,7 @@ export function DailyInsights(props: DailyInsightsProps) {
                 )
               );
             } finally {
+              setIsRefreshing(false);
               setIsStarting(false);
             }
           }, 3000);
@@ -338,6 +348,7 @@ export function DailyInsights(props: DailyInsightsProps) {
               getErrorMessage(err, 'There was a problem executing the ML agent')
             )
           );
+          setIsRefreshing(false);
           setIsStarting(false);
         });
     }
@@ -547,7 +558,7 @@ export function DailyInsights(props: DailyInsightsProps) {
             <EuiText textAlign="center">
               <h3>No insights available</h3>
               <p>
-                No insights have been generated in the recent time window. Check back later or run the insights job manually.
+                Insights will appear here after the first 24-hour cycle completes. Check back later once insights have been collected.
               </p>
             </EuiText>
           </EuiPanel>
@@ -765,8 +776,8 @@ export function DailyInsights(props: DailyInsightsProps) {
         onStartInsights={async (indices, agentId) => {
           setSelectedIndicesForSetup(indices);
           try {
-            await handleStartInsights(agentId);
             setIsIndexSelectionModalVisible(false);
+            await handleStartInsights(agentId);
           } catch (error: any) {
           }
         }}
